@@ -1,0 +1,15 @@
+cc -I. -I ../utils -o libmemtrace.so -shared -fPIC memtrace.c ../utils/memlog.c ../utils/memlist.c -ldl
+[0001] Memory tracer started.
+[0002]           malloc( 10 ) = 0x5618fdf552d0
+[0003]           free( 0x5618fdf552d0 )
+[0004]     *** DOUBLE_FREE  *** (ignoring)
+[0005]     *** ILLEGAL_FREE *** (ignoring)
+[0006]           malloc( 10000 ) = 0x5618fdf55320
+[0007]           free( 0x5618fdf55320 )
+[0008] 
+[0009] Statistics
+[0010]   allocated_total      20010
+[0011]   allocated_avg        5002
+[0012]   freed_total          10010
+[0013] 
+[0014] Memory tracer stopped.

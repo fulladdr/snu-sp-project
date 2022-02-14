@@ -1,0 +1,18 @@
+cc -I. -I ../utils -o libmemtrace.so -shared -fPIC memtrace.c ../utils/memlog.c ../utils/memlist.c -ldl
+[0001] Memory tracer started.
+[0002]           malloc( 1024 ) = 0x560bad1532d0
+[0003]           malloc( 32 ) = 0x560bad153710
+[0004]           malloc( 1 ) = 0x560bad153770
+[0005]           free( 0x560bad153770 )
+[0006]           free( 0x560bad153710 )
+[0007] 
+[0008] Statistics
+[0009]   allocated_total      1057
+[0010]   allocated_avg        352
+[0011]   freed_total          33
+[0012] 
+[0013] Non-deallocated memory blocks
+[0014]   block              size       ref cnt
+[0015]   0x560bad1532d0     1024       1      
+[0016] 
+[0017] Memory tracer stopped.

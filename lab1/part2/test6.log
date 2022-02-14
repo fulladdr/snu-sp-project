@@ -1,0 +1,16 @@
+cc -I. -I ../utils -o libmemtrace.so -shared -fPIC memtrace.c ../utils/memlog.c ../utils/memlist.c -ldl
+[0001] Memory tracer started.
+[0002]           malloc( 10 ) = 0x55fc9b10f2d0
+[0003]           realloc( 0x55fc9b10f2d0 , 100 ) = 0x55fc9b10f320
+[0004]           realloc( 0x55fc9b10f320 , 1000 ) = 0x55fc9b10f3c0
+[0005]           realloc( 0x55fc9b10f3c0 , 10000 ) = 0x55fc9b10f7e0
+[0006]           realloc( 0x55fc9b10f7e0 , 100000 ) = 0x55fc9b111f30
+[0007]           realloc( 0x55fc9b111f30 , 10 ) = 0x55fc9b111f30
+[0008]           free( 0x55fc9b111f30 )
+[0009] 
+[0010] Statistics
+[0011]   allocated_total      111120
+[0012]   allocated_avg        18520
+[0013]   freed_total          100000
+[0014] 
+[0015] Memory tracer stopped.
