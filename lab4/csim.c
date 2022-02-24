@@ -7,8 +7,8 @@
 #include "cachelab.h"
 
 struct _line {
-  bool valid;
-  int tag;
+  int valid;
+  unsigned long int tag;
   int timestamp;
 };
 
@@ -18,8 +18,8 @@ struct _set{
 
 struct _cache{
   struct _set *sets;
-  unsigned int setcount;  
-  unsigned int linecount;
+  unsigned long int setcount;  
+  unsigned long int linecount;
 };
 
 
@@ -78,15 +78,15 @@ int main(int argc, char *argv[]) {
 	char line[32];
 	char *tokenoperation, *tokenaddress, *tokensize;
 	unsigned int hitcount=0, misscount=0, evictioncount=0;
-	unsigned int address, tag, setindex;
+	unsigned long int address, tag, setindex;
 	unsigned int size;
-
+	const char delimiters[] = ", ";
 	while (fgets(line, 32, tracefile) != NULL){
 		if (line[0] == 'I')
 			continue; //ignore instruction load
-		tokenoperation = strtok(line, " ,");
-		tokenaddress = strtok(NULL, " ,");
-		tokensize = strtok(NULL, " ,");
+		tokenoperation = strtok(line, delimiters);
+		tokenaddress = strtok(NULL, delimiters);
+		tokensize = strtok(NULL, delimiters);
 		size = atoi(tokensize);
 		
 		if (VERBOSE)
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 				if (EVICTION){
 					++evictioncount;
 					if (VERBOSE)
-						printf("evict ");
+						printf("eviction ");
 					unsigned int lrucount = -1, lruline;
 					for (unsigned int i=0;i<cache.linecount;i++){
 						struct _line* line = &set->lines[i];
@@ -149,6 +149,7 @@ int main(int argc, char *argv[]) {
 					update(set, lruline);
 				}
 			}
+			printSummary(hitcount, misscount, evictioncount);
 		} while(line[1] == 'M' && mcount <2);
 		if (VERBOSE)
 			printf("\n");
@@ -163,12 +164,12 @@ int main(int argc, char *argv[]) {
 }
 
 void update(struct _set *set, unsigned int linenum){
-	for (unsigned int i=0;i<cache.linecount;i++){
+	for (int i=0;i<cache.linecount;i++){
 		struct _line *l = &set->lines[i];
 		if (i==linenum)
 			l->timestamp=0;
 		else
-			l->timestamp++;
+			(l->timestamp)++;
 	}
 }
 
