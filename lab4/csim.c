@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 					++evictioncount;
 					if (VERBOSE)
 						printf("evict ");
-					unsigned int lrucount = -1, lruline;
+					int lrucount = -1, lruline;
 					for (unsigned int i=0;i<cache.linecount;i++){
 						struct _line* line = &set->lines[i];
 						if ((line->timestamp) > lrucount){

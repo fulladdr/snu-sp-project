@@ -23,25 +23,16 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
     int f, g, h;
 
     int tmp, same;
-    //int same; 
-    /*blocking: divide the matrix into sub-matrices.
-		size of sub-matrix depends on cache block size, cache size, 
-		input matrix size.*/
-
-/**32 X 32 ***************************************************************/
+ 	
     if (M == 32 && N == 32){ 
-	//divide the matrix into 8*8 block and be careful for the i == j eviction
         for(l=0; l < 4; l++){  
             for(k=0; k < 4; k++){ 
-                /*block size 8 * 8 */
                 for (i = l*8; i < l*8+8; i++){
                     for (j = k*8; j < k*8+8; j++) { 
                         if(i!=j) {
                             B[j][i]=A[i][j];
-			} //special handling for same block 
+			} 
                         else{
-			//B[j][i] = A[i][j] for the same i, j will cause cache miss.
-			//=> do the calculation at the end
                             tmp=A[j][j];  
                             same = j;
                         }
@@ -49,18 +40,12 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
                     if(k==l){ 
 			B[same][same] = tmp;
 		    }
-		/**************************/
                 }
             }    
         }
     } 
-/**32 X 32 ***************************************************************/
 
-/**64 X 64 ***************************************************************/    
         else if (M==64 && N == 64){
-           /* divide the matrix into 8*8 blocks, 
-		do the calculation separately for upper half and lower half */
-	//variables don't mean anything here. Just reusing because limited.
             for(i=0; i<64; i+=8){
                 for(j=0; j<64; j+=8){
 		   
@@ -139,25 +124,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
                 }
             }
         } 
-/**64 X 64 ***************************************************************/  
-
-/**61 X 67 ***************************************************************/
-        else{  //naive approach works 
-            /*for(k=0; k < sets_num; k++){
-                for (i = 0; i < N; i++) {
-                    for (j = 0; j < 8; j++) {
-                        B[j+count][i]=A[i][j+count];
-                    }
-                }
-                count +=8;
-            }
-            for (i = 0; i < N; i++) { 
-                for (j = 0; j < sets_remainder; j++) {
-                    tmp = A[i][j+count];
-                    B[j+count][i] = tmp;
-                }
-            }
-            count +=8;*/
+        else{ 
 	    for (i = 0; i < N; i+=8) {
 		for (j = 0; j < M; j+= 8) {
 			for (k = j;(k<j+8) && (k<M);++k) {
@@ -168,7 +135,6 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 		}
 	    }
         }
-/**61 X 67 ***************************************************************/    
 } 
 
 /* 
@@ -206,7 +172,6 @@ void registerFunctions()
 {
     registerTransFunction(transpose_submit, transpose_submit_desc);
 
-    //registerTransFunction(trans, trans_desc);
 
 }
 
