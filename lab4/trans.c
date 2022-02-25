@@ -23,6 +23,7 @@ char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
 	int row, col, i, j, w, tmp;
+	int t1, t2, t3, t4, t5, t6, t7, t8; 
 	if (M==32 && N==32){
 		for (row=0;row<N;row+=8){
 			for (col=0;col<M;col+=8){
@@ -38,12 +39,83 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 			}
 		}
 	} else if (M==64 && N==64){
+		for (col=0;col<M;col+=8){
+			for (row=0;row<N;row+=8){
+				for (tmp=0;tmp<4;tmp++){
+					t1 = A[col+tmp][row+0];
+					t2 = A[col+tmp][row+1];
+					t3 = A[col+tmp][row+2];
+					t4 = A[col+tmp][row+3];
+					t5 = A[col+tmp][row+4];
+					t6 = A[col+tmp][row+5];
+					t7 = A[col+tmp][row+6];
+					t8 = A[col+tmp][row+7];
+					B[row+0][col+tmp+0] = t1;
+					B[row+0][col+tmp+4] = t6;
+					B[row+1][col+tmp+0] = t2;
+					B[row+1][col+tmp+4] = t7;
+					B[row+2][col+tmp+0] = t3;
+					B[row+2][col+tmp+4] = t8;
+					B[row+3][col+tmp+0] = t4;
+					B[row+3][col+tmp+4] = t5;
+				}	
+				t1 = A[col+4][row+4];
+				t2 = A[col+5][row+4];
+				t3 = A[col+6][row+4];
+				t4 = A[col+7][row+4];
+				t5 = A[col+4][row+3];
+				t6 = A[col+5][row+3];
+				t7 = A[col+6][row+3];
+				t8 = A[col+7][row+3];
+				B[row+4][col+0] = B[row+3][col+4];
+				B[row+4][col+0] = t1;
+				B[row+3][col+0] = t5;
+				B[row+4][col+0] = B[row+3][col+5];
+				B[row+4][col+0] = t2;
+				B[row+3][col+0] = t6;
+				B[row+4][col+2] = B[row+3][col+6];
+				B[row+4][col+6] = t3;
+				B[row+3][col+6] = t7;
+				B[row+4][col+3] = B[row+3][col+7];
+				B[row+4][col+7] = t4;
+				B[row+3][col+7] = t8;
+
+				for (tmp=0;tmp<3;tmp++){
+					t1 = A[col+4][row+5+tmp];
+					t2 = A[col+5][row+5+tmp];
+					t3 = A[col+6][row+5+tmp];
+					t4 = A[col+7][row+5+tmp];
+					t5 = A[col+4][row+tmp];
+					t6 = A[col+5][row+tmp];
+					t7 = A[col+6][row+tmp];
+					t8 = A[col+7][row+tmp];
+					
+					B[row+5+tmp][col+0] = B[row+tmp][col+4];
+					B[row+5+tmp][col+4] = t1;
+					B[row+tmp][col+4] = t5;
+					B[row+5+tmp][col+1] = B[row+tmp][col+5];
+					B[row+5+tmp][col+5] = t2;
+					B[row+tmp][col+5] = t6;
+					B[row+5+tmp][col+2] = B[row+tmp][col+6];
+					B[row+5+tmp][col+6] = t3;
+					B[row+tmp][col+6] = t7;
+					B[row+5+tmp][col+3] = B[row+tmp][col+7];
+					B[row+5+tmp][col+7] = t4;
+					B[row+tmp][col+7] = t8;
+				}
+		}
+	} else if (M == 61 && N==67){
 		for (row=0;row<N;row+=8){
 			for (col=0;col<M;col+=8){
-				for(w=0;w<4;w++){
-
+				for (i=col;(i<col+8 && i<M);i++){
+					for (j=row;(j<row+8 && row<N);j++){
+						B[i][j] = A[j][i];
+					}
+				}
+			}
+		}
 	}
-
+	return;
 
 }
 
