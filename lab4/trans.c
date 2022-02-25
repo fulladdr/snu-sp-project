@@ -1,12 +1,3 @@
-/* 
- * trans.c - Matrix transpose B = A^T
- *
- * Each transpose function must have a prototype of the form:
- * void trans(int M, int N, int A[N][M], int B[M][N]);
- *
- * A transpose function is evaluated by counting the number of misses
- * on a 1KB direct mapped cache with a block size of 32 bytes.
- */ 
 #include <stdio.h>
 #include "cachelab.h"
 
@@ -22,102 +13,163 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
-	int row, col, i, j, w, tmp;
-	int t1, t2, t3, t4, t5, t6, t7, t8; 
-	if (M==32 && N==32){
-		for (row=0;row<N;row+=8){
-			for (col=0;col<M;col+=8){
-				for (i=row;i<row+8 && i<N;++i){
-					tmp = A[i][i];
-					for (j=col;j<col+8;j<M;++j){
-						if (i==j)
-							continue;
-						B[j][i] = A[i][j];
-					}
-					B[i][i] = tmp;
+    //you are allowed to define at most 12 local variables of type int
+    //per transpose function.
+
+    int sets_num = M/8;
+    int sets_remainder = M%8;
+
+    int i, j, k, l; 
+    int f, g, h;
+
+    int tmp, same;
+    //int same; 
+    /*blocking: divide the matrix into sub-matrices.
+		size of sub-matrix depends on cache block size, cache size, 
+		input matrix size.*/
+
+/**32 X 32 ***************************************************************/
+    if (M == 32 && N == 32){ 
+	//divide the matrix into 8*8 block and be careful for the i == j eviction
+        for(l=0; l < 4; l++){  
+            for(k=0; k < 4; k++){ 
+                /*block size 8 * 8 */
+                for (i = l*8; i < l*8+8; i++){
+                    for (j = k*8; j < k*8+8; j++) { 
+                        if(i!=j) {
+                            B[j][i]=A[i][j];
+			} //special handling for same block 
+                        else{
+			//B[j][i] = A[i][j] for the same i, j will cause cache miss.
+			//=> do the calculation at the end
+                            tmp=A[j][j];  
+                            same = j;
+                        }
+                    }
+                    if(k==l){ 
+			B[same][same] = tmp;
+		    }
+		/**************************/
+                }
+            }    
+        }
+    } 
+/**32 X 32 ***************************************************************/
+
+/**64 X 64 ***************************************************************/    
+        else if (M==64 && N == 64){
+           /* divide the matrix into 8*8 blocks, 
+		do the calculation separately for upper half and lower half */
+	//variables don't mean anything here. Just reusing because limited.
+            for(i=0; i<64; i+=8){
+                for(j=0; j<64; j+=8){
+		   
+                    for(k=0; k<4; k++){ 
+                        l = A[i+k][j+0];
+                        tmp = A[i+k][j+1];
+                        same = A[i+k][j+2];
+
+                        sets_remainder = A[i+k][j+3];
+                        sets_num = A[i+k][j+4];
+
+                        f = A[i+k][j+5];
+                        g = A[i+k][j+6];
+                        h = A[i+k][j+7];
+
+                        B[j+0][i+k+0] = l;
+                        B[j+0][i+k+4] = f;
+                        B[j+1][i+k+0] = tmp;
+                        B[j+1][i+k+4] = g;
+                        B[j+2][i+k+0] = same;
+                        B[j+2][i+k+4] = h;
+                        B[j+3][i+k+0] = sets_remainder;
+                        B[j+3][i+k+4] = sets_num;
+                    }
+
+                    l = A[i+4][j+4];
+                    tmp = A[i+5][j+4];
+                    same = A[i+6][j+4];
+
+                    sets_remainder = A[i+7][j+4];
+                    sets_num = A[i+4][j+3];
+
+                    f = A[i+5][j+3];
+                    g = A[i+6][j+3];
+                    h = A[i+7][j+3];
+
+                    B[j+4][i+0] = B[j+3][i+4];
+                    B[j+4][i+4] = l;
+                    B[j+3][i+4] = sets_num;
+                    B[j+4][i+1] = B[j+3][i+5];
+                    B[j+4][i+5] = tmp;
+                    B[j+3][i+5] = f;
+                    B[j+4][i+2] = B[j+3][i+6];
+                    B[j+4][i+6] = same;
+                    B[j+3][i+6] = g;
+                    B[j+4][i+3] = B[j+3][i+7];
+                    B[j+4][i+7] = sets_remainder;
+                    B[j+3][i+7] = h;
+
+                    for(k=0;k<3;k++){
+
+                        l = A[i+4][j+5+k];
+                        tmp = A[i+5][j+5+k];
+                        same = A[i+6][j+5+k];
+                        sets_remainder = A[i+7][j+5+k];
+                        sets_num = A[i+4][j+k];
+                        f = A[i+5][j+k];
+                        g = A[i+6][j+k];
+                        h = A[i+7][j+k];
+
+                        B[j+5+k][i+0] = B[j+k][i+4];
+                        B[j+5+k][i+4] = l;
+                        B[j+k][i+4] = sets_num;
+                        B[j+5+k][i+1] = B[j+k][i+5];
+                        B[j+5+k][i+5] = tmp;
+                        B[j+k][i+5] = f;
+                        B[j+5+k][i+2] = B[j+k][i+6];
+                        B[j+5+k][i+6] = same;
+                        B[j+k][i+6] = g;
+                        B[j+5+k][i+3] = B[j+k][i+7];
+                        B[j+5+k][i+7] = sets_remainder;
+                        B[j+k][i+7] = h;
+
+                    }		
+                     
+                }
+            }
+        } 
+/**64 X 64 ***************************************************************/  
+
+/**61 X 67 ***************************************************************/
+        else{  //naive approach works 
+            /*for(k=0; k < sets_num; k++){
+                for (i = 0; i < N; i++) {
+                    for (j = 0; j < 8; j++) {
+                        B[j+count][i]=A[i][j+count];
+                    }
+                }
+                count +=8;
+            }
+            for (i = 0; i < N; i++) { 
+                for (j = 0; j < sets_remainder; j++) {
+                    tmp = A[i][j+count];
+                    B[j+count][i] = tmp;
+                }
+            }
+            count +=8;*/
+	    for (i = 0; i < N; i+=8) {
+		for (j = 0; j < M; j+= 8) {
+			for (k = j;(k<j+8) && (k<M);++k) {
+				for (l = i; (l<i+8)&&(l<N); ++l) {
+					B[k][l] = A[l][k];
 				}
 			}
 		}
-	} else if (M==64 && N==64){
-		for (col=0;col<M;col+=8){
-			for (row=0;row<N;row+=8){
-				for (tmp=0;tmp<4;tmp++){
-					t1 = A[col+tmp][row+0];
-					t2 = A[col+tmp][row+1];
-					t3 = A[col+tmp][row+2];
-					t4 = A[col+tmp][row+3];
-					t5 = A[col+tmp][row+4];
-					t6 = A[col+tmp][row+5];
-					t7 = A[col+tmp][row+6];
-					t8 = A[col+tmp][row+7];
-					B[row+0][col+tmp+0] = t1;
-					B[row+0][col+tmp+4] = t6;
-					B[row+1][col+tmp+0] = t2;
-					B[row+1][col+tmp+4] = t7;
-					B[row+2][col+tmp+0] = t3;
-					B[row+2][col+tmp+4] = t8;
-					B[row+3][col+tmp+0] = t4;
-					B[row+3][col+tmp+4] = t5;
-				}	
-				t1 = A[col+4][row+4];
-				t2 = A[col+5][row+4];
-				t3 = A[col+6][row+4];
-				t4 = A[col+7][row+4];
-				t5 = A[col+4][row+3];
-				t6 = A[col+5][row+3];
-				t7 = A[col+6][row+3];
-				t8 = A[col+7][row+3];
-				B[row+4][col+0] = B[row+3][col+4];
-				B[row+4][col+0] = t1;
-				B[row+3][col+0] = t5;
-				B[row+4][col+0] = B[row+3][col+5];
-				B[row+4][col+0] = t2;
-				B[row+3][col+0] = t6;
-				B[row+4][col+2] = B[row+3][col+6];
-				B[row+4][col+6] = t3;
-				B[row+3][col+6] = t7;
-				B[row+4][col+3] = B[row+3][col+7];
-				B[row+4][col+7] = t4;
-				B[row+3][col+7] = t8;
-
-				for (tmp=0;tmp<3;tmp++){
-					t1 = A[col+4][row+5+tmp];
-					t2 = A[col+5][row+5+tmp];
-					t3 = A[col+6][row+5+tmp];
-					t4 = A[col+7][row+5+tmp];
-					t5 = A[col+4][row+tmp];
-					t6 = A[col+5][row+tmp];
-					t7 = A[col+6][row+tmp];
-					t8 = A[col+7][row+tmp];
-					
-					B[row+5+tmp][col+0] = B[row+tmp][col+4];
-					B[row+5+tmp][col+4] = t1;
-					B[row+tmp][col+4] = t5;
-					B[row+5+tmp][col+1] = B[row+tmp][col+5];
-					B[row+5+tmp][col+5] = t2;
-					B[row+tmp][col+5] = t6;
-					B[row+5+tmp][col+2] = B[row+tmp][col+6];
-					B[row+5+tmp][col+6] = t3;
-					B[row+tmp][col+6] = t7;
-					B[row+5+tmp][col+3] = B[row+tmp][col+7];
-					B[row+5+tmp][col+7] = t4;
-					B[row+tmp][col+7] = t8;
-				}
-		}
-	} else if (M == 61 && N==67){
-		for (row=0;row<N;row+=8){
-			for (col=0;col<M;col+=8){
-				for (i=col;(i<col+8 && i<M);i++){
-					for (j=row;(j<row+8 && row<N);j++){
-						B[i][j] = A[j][i];
-					}
-				}
-			}
-		}
-	}
-	return;
-
-}
+	    }
+        }
+/**61 X 67 ***************************************************************/    
+} 
 
 /* 
  * You can define additional transpose functions below. We've defined
@@ -127,19 +179,21 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 /* 
  * trans - A simple baseline transpose function, not optimized for the cache.
  */
-char trans_desc[] = "Simple row-wise scan transpose";
-void trans(int M, int N, int A[N][M], int B[M][N])
-{
-    int i, j, tmp;
 
-    for (i = 0; i < N; i++) {
-        for (j = 0; j < M; j++) {
-            tmp = A[i][j];
-            B[j][i] = tmp;
-        }
-    }    
-
-}
+//to help you get started, we have given you an example transpose function 
+//in trans.c that computes the transpose of NXM matrix A
+//and stores the results in MXN matrix B
+//char trans_desc[] = "Simple row-wise scan transpose";
+//void trans(int M, int N, int A[N][M], int B[M][N])
+//{
+	/*int i, j, tmp;
+	for (i = 0; i < N; i++) {
+        	for (j = 0; j < M; j++) {
+            		tmp = A[i][j];
+           		 B[j][i] = tmp;
+        	}
+    	}*/   
+//}
 
 /*
  * registerFunctions - This function registers your transpose
@@ -150,11 +204,9 @@ void trans(int M, int N, int A[N][M], int B[M][N])
  */
 void registerFunctions()
 {
-    /* Register your solution function */
-    registerTransFunction(transpose_submit, transpose_submit_desc); 
+    registerTransFunction(transpose_submit, transpose_submit_desc);
 
-    /* Register any additional transpose functions */
-    registerTransFunction(trans, trans_desc); 
+    //registerTransFunction(trans, trans_desc);
 
 }
 
@@ -176,4 +228,3 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N])
     }
     return 1;
 }
-
